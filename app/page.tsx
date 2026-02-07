@@ -1,6 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ExternalLink, LucideLoader2 } from "lucide-react";
+import Link from "next/link";
 import { ChangeEvent, useState } from "react";
 
 type PaperResponse = {
@@ -21,21 +31,45 @@ type PaperResponse = {
 
 export default function Page() {
   const [topic, setTopic] = useState<string>("");
-  const [numPaper, setNumPaper] = useState<number>();
+  const [numPapers, setNumPapers] = useState<number>();
 
   const [loading, setLoading] = useState<boolean>(false);
 
   const [results, setResults] = useState<PaperResponse[]>();
 
+  const [error, setError] = useState<string>("");
+
   const handleSearchPaper = async (e: any) => {
     e.preventDefault();
-    console.log(topic);
-    console.log(numPaper);
+    setTopic("");
+    setNumPapers(0);
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/query-paper`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ topic: topic, num_papers: numPapers }),
+        }
+      );
+
+      setLoading(false);
+
+      const data = await response.json();
+      setResults(data.results);
+    } catch (e) {
+      setError(e as string);
+      return e;
+    }
   };
   return (
     <div className="p-10 mt-5">
-      <div>
-        <div className="text-center">
+      <div className="text-center">
+        <div>
           <h1 className="mb-2 text-lg text-primary font-semibold">
             Arxiv Search
           </h1>
@@ -56,7 +90,7 @@ export default function Page() {
               Papers Limit
             </Label>
 
-            <Select onValueChange={(value) => setNumPaper(Number(value))}>
+            <Select onValueChange={(value) => setNumPapers(Number(value))}>
               <SelectTrigger className="w-45 mt-4">
                 <SelectValue placeholder="Select number" />
               </SelectTrigger>
@@ -84,6 +118,56 @@ export default function Page() {
               Search
             </Button>
           </div>
+        </div>
+
+        {loading && (
+          <div>
+            <span>Searching</span>
+            <LucideLoader2 className="animate-spin text-primary" />
+          </div>
+        )}
+
+        {error && (
+          <div>
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="mt-5">
+          <h1 className="font-medium text-lg text-primary">Result</h1>
+          {results && (
+            <div>
+              <div>
+                <p className="text-muted-foreground mt-2">
+                  Found {results.length} papers
+                </p>
+              </div>
+              <div className="space-y-5 grid grid-cols-1 mt-5">
+                {results?.map((doc) => (
+                  <Card className="max-w-100 mx-auto p-3" key={doc.title}>
+                    <CardTitle className="text-md">{doc.title}</CardTitle>
+                    <CardDescription>
+                      <Link
+                        href={doc.link}
+                        className="flex items-center gap-3 justify-center"
+                      >
+                        Link <ExternalLink />
+                      </Link>
+                    </CardDescription>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="w-50 mx-auto">View Summary</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogTitle>Summary</DialogTitle>
+                        <DialogDescription>{doc.summary}</DialogDescription>
+                      </DialogContent>
+                    </Dialog>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
