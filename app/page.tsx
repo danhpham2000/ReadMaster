@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 import {
   Select,
   SelectContent,
@@ -21,17 +23,18 @@ import {
 } from "@/components/ui/select";
 import { ExternalLink, LucideLoader2 } from "lucide-react";
 import Link from "next/link";
-import { ChangeEvent, useState } from "react";
+import { useState } from "react";
 
 type PaperResponse = {
   title: string;
   summary: string;
   link: string;
+  time_read: number;
 };
 
 export default function Page() {
   const [topic, setTopic] = useState<string>("");
-  const [numPapers, setNumPapers] = useState<number>();
+  const [numPapers, setNumPapers] = useState<string>();
 
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -42,7 +45,7 @@ export default function Page() {
   const handleSearchPaper = async (e: any) => {
     e.preventDefault();
     setTopic("");
-    setNumPapers(0);
+    setNumPapers("");
 
     setLoading(true);
     try {
@@ -67,8 +70,8 @@ export default function Page() {
     }
   };
   return (
-    <div className="p-10 mt-5">
-      <div className="text-center">
+    <div className="">
+      <div className="text-center mt-7">
         <div>
           <h1 className="mb-2 text-lg text-primary font-semibold">
             Arxiv Search
@@ -90,7 +93,10 @@ export default function Page() {
               Papers Limit
             </Label>
 
-            <Select onValueChange={(value) => setNumPapers(Number(value))}>
+            <Select
+              onValueChange={(value) => setNumPapers(value)}
+              value={numPapers?.toString()}
+            >
               <SelectTrigger className="w-45 mt-4">
                 <SelectValue placeholder="Select number" />
               </SelectTrigger>
@@ -121,7 +127,7 @@ export default function Page() {
         </div>
 
         {loading && (
-          <div>
+          <div className="flex items-center gap-3 justify-center mt-3">
             <span>Searching</span>
             <LucideLoader2 className="animate-spin text-primary" />
           </div>
@@ -144,7 +150,8 @@ export default function Page() {
               </div>
               <div className="space-y-5 grid grid-cols-1 mt-5">
                 {results?.map((doc) => (
-                  <Card className="max-w-100 mx-auto p-3" key={doc.title}>
+                  <Card className="w-100 mx-auto p-3" key={doc.title}>
+                    <Badge>{doc.time_read} min read</Badge>
                     <CardTitle className="text-md">{doc.title}</CardTitle>
                     <CardDescription>
                       <Link
@@ -160,7 +167,9 @@ export default function Page() {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogTitle>Summary</DialogTitle>
-                        <DialogDescription>{doc.summary}</DialogDescription>
+                        <DialogDescription className="text-sm/6 overflow-y-auto h-100">
+                          {doc.summary}
+                        </DialogDescription>
                       </DialogContent>
                     </Dialog>
                   </Card>
